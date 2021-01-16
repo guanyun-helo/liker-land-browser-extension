@@ -44,20 +44,22 @@ class _Twitter {
         const inferPostURL = links[2].href;
 
         if (!this.knownAccounts.has(inferUsername)) {
-            const testUsername = await fetch(`https://api.like.co/social/list/${inferUsername}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data['twitter'] && data['twitter'].displayName === inferUsername) {
-                    return true;
-                }
-    
-                for(let key in data) {
-                    if (key.startsWith('link') && data[key].siteDisplayName == 'twitter' && data[key].url.replace('https://twitter.com/', '').replace('@', ''))
-                    return true;
-                }
-                
-                return false;
+            send('social', { likerID: inferUsername });
+            const testUsername: boolean = await new Promise(res => {
+                onReceive(`social:${inferUsername}`, data => {
+                    if (data['twitter'] && data['twitter'].displayName === inferUsername) {
+                        return res(true);
+                    }
+        
+                    for(let key in data) {
+                        if (key.startsWith('link') && data[key].siteDisplayName == 'twitter' && data[key].url.replace('https://twitter.com/', '').replace('@', ''))
+                        return res(true);
+                    }
+                    
+                    res(false);
+                });
             });
+
             this.knownAccounts.set(inferUsername, testUsername);
         }
 

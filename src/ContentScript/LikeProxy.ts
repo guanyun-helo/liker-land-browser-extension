@@ -18,6 +18,14 @@ onReceive('query', async (content: { likerID: string , postURL: string }) => {
     });
 });
 
+onReceive('social', async (content: { likerID: string }) => {
+    fetch(`https://api.like.co/social/list/${content.likerID}`)
+    .then(res => res.json())
+    .then(data => {
+        send(`social:${content.likerID}`, data);
+    });
+});
+
 onReceive('like', (content: { likerID: string, postURL: string }) => {
     fetch(`https://like.co/api/like/likebutton/${content.likerID}/like?referrer=${content.postURL}&cookie_support=0`, { method: 'POST' })
     .then(res => res.text())
