@@ -1,33 +1,39 @@
-const IDENTIFIER = 'liker-land-extension'
+import { browser } from 'webextension-polyfill-ts';
+import { nanoid } from 'nanoid';
 
-const ActionCallbacks: Map<string, Array<Function>> = new Map();
+const IDENTIFIER = 'liker-land-extension';
 
-function onReceive (action: string, callback: (content: any) => any, once = false) {
-    if (once) {
-        const originCallback = callback;
-        callback = function (content) {
-            originCallback(content);
-            const callbacks = ActionCallbacks.get(action)!;
-            callbacks.splice(callbacks.indexOf(callback));
-        };
-    }
-    if (ActionCallbacks.has(action)) ActionCallbacks.get(action)!.push(callback);
-    else ActionCallbacks.set(action, [callback]);
+class EventCenter {
+  actionMap = new Map();
+
+  constructor() {
+    this.receviceMessage();
+  }
+
+  sendMessage(action: string, content: any, callBack: Function) {
+    const nid = nanoid();
+    const data = {
+      action,
+      content,
+      nid,
+      _identifier: IDENTIFIER,
+    };
+    window.postMessage(data, window.location.origin);
+    this.actionMap.set(nid, callBack);
+  }
+
+  receviceMessage() {
+    window.addEventListener('message', event => {
+      if (event.data.type === 'response') {
+        if (this.actionMap.has(event.data.nid)) {
+          const callBack = this.actionMap.get(event.data.nid);
+          callBack(event.data);
+        }
+      }
+    });
+  }
 }
 
-function send (action: string, content: any) {
-    window.postMessage({
-        action,
-        content,
-        _identifier: IDENTIFIER
-    }, window.location.origin);
-}
+const eventCenter = new EventCenter();
 
-window.addEventListener('message', event => {
-    if (event.source !== window || !event.data || event.data._identifier !== IDENTIFIER) return;
-    
-    const callbacks = ActionCallbacks.get(event.data.action) || [];
-    callbacks.forEach(callback => callback(event.data.content))
-});
-
-export { onReceive, send };
+export default eventCenter;

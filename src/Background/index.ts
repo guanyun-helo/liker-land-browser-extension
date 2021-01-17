@@ -1,6 +1,7 @@
 import { browser } from 'webextension-polyfill-ts';
 import * as api from '../utils/api/likerland';
 import { refreshBookmark, addBookmark, removeBookmark, isBookmarked } from './bookmarks';
+import './proxy/message';
 
 let isLoggedIn = false;
 
